@@ -192,19 +192,24 @@ class Game(object):
 		for ind, square in enumerate(all_squares):
 			thing_in_square = "empty"
 			for obj in self.map.get((self.player.x + square[0], self.player.y + square[1])):
+				print('-----')
 				print(type(obj))
-				print(type(Wall))
+				print(Wall)
 				# print(Enemy)
 				if issubclass(type(obj), Enemy):
 					print("1")
 					thing_in_square = "enemy"
-				elif isinstance(type(obj), Wall):
+				elif type(obj) == Wall:
 					print("2")
 					thing_in_square = "wall"
-				elif isinstance(type(obj), Stairs):
+				elif type(obj) == Stairs:
+				# elif isinstance(type(obj), Stairs):
 					print("3")
 					thing_in_square = "stairs"
 			game_state[ind] = thing_in_square
+			if "stairs" in game_state:
+				import sys
+				sys.exit(0)
 		return game_state
 
 	def handle_events(self, events):
