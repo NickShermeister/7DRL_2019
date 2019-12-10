@@ -131,9 +131,9 @@ class Game(object):
 
 	def getLegalActions(self, state):
 		all_legal = [(0,0)]
-		for i,x in enumerate(state):
-			if i <= 7 and x != 'wall':
-				all_legal.append(all_squares[i])
+		for i in range(len(directions)):
+			if state[i] != 'wall':
+				all_legal.append(directions[i])
 
 		# print(all_legal)
 		return all_legal
