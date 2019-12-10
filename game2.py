@@ -14,11 +14,16 @@ from enemy import *
 from editor import *
 from character_select import *
 from level_preview import *
+
+# for q learning
 from map import Wall, Stairs
 from copy import deepcopy
+import pickle
+import datetime
+import argparse
 
 EPSILON = 0.1
-ALPHA = 0.1
+ALPHA = 0.6
 DISCOUNT = 0.95
 
 class Game(object):
@@ -86,6 +91,10 @@ class Game(object):
 		self.last_hp = 0
 
 		self.load_level()
+
+		# for q learning
+		self.killed_enemy = False
+		self.teleop = False
 
 
 	def update_mana_bar(self, dt):
@@ -159,9 +168,37 @@ class Game(object):
 		return action
 
 	def getAction(self, state):
+		if "bat" not in state and "bug" not in state and "hazard" not in state and "enemy" not in state:
+			# if state[-2] == 1 and action[0] == 1:
+			# 	reward += 10
+			# elif state[-2] == -1 and action[0] == -1:
+			# 	reward += 10
+			# elif state[-1] == 1 and action[1] == 1:
+			# 	reward += 10
+			# elif state[-1] == -1 and action[1] == -1:
+			# 	reward += 10
+			if self.player.x - self.stairloc[0] > 0:
+				action = (-1,0)
+				# game_state.append(-1)
+			elif self.player.x - self.stairloc[0] < 0:
+				# game_state.append(1)
+				action = (1,0)
+			# else:
+			# 	game_state.append(0)
+			elif self.player.y - self.stairloc[1] > 0:
+				# game_state.append(-1)
+				action = (0,-1)
+			else: #elif self.player.y - self.stairloc[1] < 0:
+				# game_state.append(1)
+				action = (0,1)
+			# else:
+				# game_state.append(0)
+			return action
+
+
+
 		legalActions = self.getLegalActions(state)
 		action = None
-		"*** YOUR CODE HERE ***"
 		eps = (random.random() <= EPSILON)
 		if eps:
 			# print("eps")
@@ -186,38 +223,46 @@ class Game(object):
 
 	def get_reward(self, state, action, next_state):
 		# HP going down is bad
+		# time.sleep(0.5)
 		reward = -1
+		# print("-----")
+		# print(self.last_hp)
+		# print(self.player.hp)
 		if self.last_hp != self.player.hp:
-			reward -= 500
-			if self.player.hp == 0:
-				reward -= 10000
+			reward -= 1000
+			# if self.player.hp == 0:
+			# 	reward -= 10000
+		self.last_hp = self.player.hp
 		# Entering stairs is good
 		if (self.player.x, self.player.y) == self.stairloc:
 			reward += 1000
 
 		# Going towards stairs is good
-		if state[-2] == 1 and action[0] == 1:
-			reward += 10
-		elif state[-2] == -1 and action[0] == -1:
-			reward += 10
-		elif state[-1] == -1 and action[1] == 1:
-			reward += 10
-		elif state[-1] == -1 and action[1] == -1:
-			reward += 10
-		elif state[-2] == 1 and action[0] == -1:
-			reward -= 20
-		elif state[-2] == -1 and action[0] == 1:
-			reward -= 20
-		elif state[-1] == -1 and action[1] == -1:
-			reward -= 20
-		elif state[-1] == -1 and action[1] == 1:
-			reward -= 20
+		# print(state[-2:])
+		# if state[-2] == 1 and action[0] == 1:
+		# 	reward += 10
+		# elif state[-2] == -1 and action[0] == -1:
+		# 	reward += 10
+		# elif state[-1] == 1 and action[1] == 1:
+		# 	reward += 10
+		# elif state[-1] == -1 and action[1] == -1:
+		# 	reward += 10
+
+		# elif state[-2] == 1 and action[0] == -1:
+		# 	reward -= 20
+		# elif state[-2] == -1 and action[0] == 1:
+		# 	reward -= 20
+		# elif state[-1] == -1 and action[1] == -1:
+		# 	reward -= 20
+		# elif state[-1] == -1 and action[1] == 1:
+		# 	reward -= 20
 
 		# Killing an enemy is good
 		if self.killed_enemy == True:
+			# print("KILLED ENEMY")
 			reward += 100
-
-		print(reward)
+		# if reward != -1:
+		# 	print(reward)
 		return reward
 
 	def get_state(self):
@@ -229,7 +274,13 @@ class Game(object):
 				# print(type(obj))
 				# print(type(Wall()))
 				# print(Enemy)
-				if issubclass(type(obj), Enemy):
+				if type(obj) == Ebat:
+					thing_in_square = "bat"
+				elif type(obj) == Bug:
+					thing_in_square = "bug"
+				elif type(obj) == GroundHazard or type(obj) == GroundHazard_Fixed:
+					thing_in_square = "hazard"
+				elif issubclass(type(obj), Enemy):
 					# print("1")
 					thing_in_square = "enemy"
 				elif type(obj) == Wall:
@@ -242,19 +293,19 @@ class Game(object):
 		# determine if we moved closer to the stairs
 
 		# compare
-		if self.player.x - self.stairloc[0] > 0:
-			game_state.append(-1)
-		elif self.player.x - self.stairloc[0] < 0:
-			game_state.append(1)
-		else:
-			game_state.append(0)
+		# if self.player.x - self.stairloc[0] > 0:
+		# 	game_state.append(-1)
+		# elif self.player.x - self.stairloc[0] < 0:
+		# 	game_state.append(1)
+		# else:
+		# 	game_state.append(0)
 
-		if self.player.y - self.stairloc[1] > 0:
-			game_state.append(-1)
-		elif self.player.y - self.stairloc[1] < 0:
-			game_state.append(1)
-		else:
-			game_state.append(0)
+		# if self.player.y - self.stairloc[1] > 0:
+		# 	game_state.append(-1)
+		# elif self.player.y - self.stairloc[1] < 0:
+		# 	game_state.append(1)
+		# else:
+		# 	game_state.append(0)
 
 		return game_state
 
@@ -268,20 +319,105 @@ class Game(object):
 		# print(game_state)
 		# Get the best event using q-learning
 		action = self.getAction(game_state)
+
+
 		# event = random.choice(ACTIONS)
 		if self.player.hp > 0 and not (self.player.x, self.player.y) == self.stairloc:
-			self.last_hp = self.player.hp
+			# self.last_hp = self.player.hp
 			self.lastloc = (self.player.x, self.player.y)
 
 			self.move_player(action[0], action[1])
 			game_state2 = self.get_state()
 			reward = 0
-			self.killed_enemy = False
 			reward = self.get_reward(game_state, action, game_state2)
+			self.ep_reward += reward
 			self.updateQ(game_state, action, game_state2, reward)
+			self.killed_enemy = False
+
+	def handle_events_teleop(self, events):
+		self.editor.update_mouse_events(events)
+		# print(self.get_state())
+		for event in events:
+			if event.type == pygame.QUIT:
+				pygame.quit()
+				sys.exit()
+			if event.type == pygame.KEYDOWN:
+				if self.black_shade == UP:
+					return
+				if event.key == pygame.K_UP or event.key == pygame.K_w :
+					self.move_player(0, -1)
+				elif event.key == pygame.K_DOWN or event.key == pygame.K_s:
+					self.move_player(0, 1)
+				elif event.key == pygame.K_LEFT or event.key == pygame.K_a:
+					self.move_player(-1, 0)
+				elif event.key == pygame.K_RIGHT or event.key == pygame.K_d:
+					self.move_player(1, 0)
+				elif event.key == pygame.K_SPACE:
+					self.move_player(0, 0)
+					self.player.mana = self.player.mana_max
+				elif event.key == pygame.K_p:
+					self.load_level()
+				elif event.key == pygame.K_e:
+					self.editor.toggle()
+				elif event.key == pygame.K_z:
+					if self.editor.active:
+						if self.player.mana >= 5:
+							self.player.macros[0] = self.editor.get_macro()
+							self.player.mana -= 5
+							self.editor.toggle()
+						else:
+							self.nope.play()
+					elif self.player in self.turn_queue:
+						self.player.macro = self.player.macros[0]
+				elif event.key == pygame.K_x:
+					if self.editor.active:
+						if self.player.mana >= 5:
+							self.player.macros[1] = self.editor.get_macro()
+							self.player.mana -= 5
+							self.editor.toggle()
+						else:
+							self.nope.play()
+					elif self.player in self.turn_queue:
+						self.player.macro = self.player.macros[1]
+				elif event.key == pygame.K_c:
+					if self.editor.active:
+						if self.player.mana >= 5:
+							self.player.macros[2] = self.editor.get_macro()
+							self.player.mana -= 5
+							self.editor.toggle()
+						else:
+							self.nope.play()
+					elif self.player in self.turn_queue:
+						self.player.macro = self.player.macros[2]
 
 
 	def main(self):
+		parser = argparse.ArgumentParser(description='Process some integers.')
+
+		# parser.add_argument('integers', metavar='N', type=int, nargs='+', default=0,
+		# 					help='an integer for the accumulator')
+
+		# parser.add_argument('--sum', dest='accumulate', action='store_const',
+		# 					const=sum, default=max,
+		# 					help='sum the integers (default: find the max)')
+
+		parser.add_argument('--values_file', type=str, default="", help="the file to load q values from")
+		parser.add_argument('--teleop', type=bool, default=False, help="True if you want to control the character")
+
+		args = parser.parse_args()
+
+		current_time = "_".join(str(time.time()).split('.'))
+
+		if args.values_file != "":
+			print("Loading q values from: ", args.values_file)
+
+			infile = open(args.values_file, 'rb')
+			self.values = pickle.load(infile)
+			infile.close()
+
+		if args.teleop:
+			self.teleop = True
+
 
 		self.episode = 0
 		self.ep_last_hp = None
@@ -291,7 +427,15 @@ class Game(object):
 		time.sleep(0.01)
 		self.camera.speed = 1.0 #   Change this for slow motion
 
+		self.turn_count = 0
+		self.ep_reward = 0
+		self.rewards = []
+
 		while True:
+			# if self.ep_last_hp == 0 and self.player.hp == 3.0:
+			# 	self.player.hp = 100.0
+			# print(self.values)
+			# import time
 			# Game logic up here
 			now = time.time()
 			# Change real_dt if you want to let everything jump to stable state
@@ -302,7 +446,10 @@ class Game(object):
 			dt = self.camera.update(real_dt)
 			dt = min(dt, 1/30.0)
 			events = pygame.event.get()
-			self.handle_events(events)
+			if self.teleop:
+				self.handle_events_teleop(events)
+			else:
+				self.handle_events(events)
 
 			# Take turn
 			if self.delay > 0:
@@ -336,7 +483,11 @@ class Game(object):
 
 			if self.player.hp == 0 and self.ep_last_hp != 0:
 				self.episode += 1
+				self.turn_count = 0
+				self.rewards.append(self.ep_reward)
+				self.ep_reward = 0
 				print("episode", self.episode)
+				print(self.rewards)
 
 			self.ep_last_hp = self.player.hp
 
@@ -350,19 +501,30 @@ class Game(object):
 			self.draw_fps(dt)
 			self.update_screen()
 
-			if self.episode % 20 == 0 or True:
-				self.screen.fill((0, 0, 0))
+			# if self.episode % 20 == 0 or True:
+			self.screen.fill((0, 0, 0))
 
-				self.update_camera_target()
-				self.draw_map()
+			self.update_camera_target()
+			self.draw_map()
 
-				#self.player.draw(self.screen)
-				#self.terminal.draw(self.screen)
-				self.render_health(self.screen)
-				self.editor.draw(self.screen)
+			#self.player.draw(self.screen)
+			#self.terminal.draw(self.screen)
+			self.render_health(self.screen)
+			self.editor.draw(self.screen)
 
-				# Removing this stops driving to screen
-				pygame.display.flip()
+			# with open("_".join(str(time.time()).split('.'))+ 'q_values_'+str(self.episode)+'.pkl', 'w') as outfile:
+			# 	pickle.dump(self.values, outfile)
+			# print(self.values)
+			if self.turn_count == 0:
+				print(self.turn_count)
+			if self.episode % 5 == 0 and self.turn_count == 0:
+				# filename = "_".join(str(time.time()).split('.'))+ 'q_values_'+str(self.episode)+'.pkl'
+				filename = current_time + 'q_values_'+str(self.episode)+'.pkl'
+				outfile = open(filename, 'wb')
+				pickle.dump(self.values, outfile)
+			self.turn_count += 1
+			# Removing this stops driving to screen
+			pygame.display.flip()
 
 
 	def update_black_screen(self, dt):
@@ -434,7 +596,7 @@ class Game(object):
 		self.stairs_sound.play()
 
 	def load_level(self, game_over=False, seed=18):
-		random.seed(seed)
+		# random.seed(seed)
 		if game_over:
 			self.level = 1
 			self.editor = Editor(self)

@@ -82,6 +82,7 @@ class Enemy(GameObject):
         if hasattr(self, "death_noise"):
             self.death_noise.play()
         self.game.killed_enemy = True
+        # print('ded enemy')
 
     def drop_item(self, value=1):
         direction = random.randint(0,3)
