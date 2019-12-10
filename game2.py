@@ -185,7 +185,6 @@ class Game(object):
 	def rewardcalc(self, state):
 		pass
 
-
 	def get_state(self):
 		adj_squares = directions
 		game_state = ["tile"] * len(all_squares)
@@ -207,9 +206,10 @@ class Game(object):
 					print("3")
 					thing_in_square = "stairs"
 			game_state[ind] = thing_in_square
-			if "stairs" in game_state:
-				import sys
-				sys.exit(0)
+
+			# if "stairs" in game_state:
+			# 	import sys
+			# 	sys.exit(0)
 		return game_state
 
 	def handle_events(self, events):
