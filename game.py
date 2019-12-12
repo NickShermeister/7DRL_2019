@@ -5,7 +5,7 @@ import os
 from math import sin, pi
 from sprite_tools import *
 from constants import *
-from map import Map
+from map import Map, Wall, Stairs
 from macro import Macro
 from block import *
 from player import Player
@@ -115,6 +115,7 @@ class Game(object):
 
     def handle_events(self, events):
         self.editor.update_mouse_events(events)
+        # print(self.get_state())
         for event in events:
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -168,6 +169,33 @@ class Game(object):
                     elif self.player in self.turn_queue:
                         self.player.macro = self.player.macros[2]
 
+    def get_state(self):
+        # directions = [ (1,1), (-1,-1), (1,0), (-1,0), () ]
+        adj_squares = directions
+        game_state = ["tile"] * len(all_squares)
+        for ind, square in enumerate(all_squares):
+            thing_in_square = "empty"
+            for obj in self.map.get((self.player.x + square[0], self.player.y + square[1])):
+                print('-----')
+                print(type(obj))
+                print(Wall)
+                # print(Enemy)
+                if issubclass(type(obj), Enemy):
+                    print("1")
+                    thing_in_square = "enemy"
+                elif type(obj) == Wall:
+                    print("2")
+                    thing_in_square = "wall"
+                elif type(obj) == Stairs:
+                # elif isinstance(type(obj), Stairs):
+                    print("3")
+                    thing_in_square = "stairs"
+            game_state[ind] = thing_in_square
+
+            # if "stairs" in game_state:
+            # 	import sys
+            # 	sys.exit(0)
+        return game_state
 
     def main(self):
 
