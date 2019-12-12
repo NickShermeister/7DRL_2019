@@ -23,8 +23,8 @@ import datetime
 import argparse
 
 EPSILON = 0.1
-ALPHA = 0.6
-DISCOUNT = 0.95
+ALPHA = 0.3
+DISCOUNT = 0.5
 
 class Game(object):
 
@@ -168,15 +168,15 @@ class Game(object):
 		return action
 
 	def getAction(self, state):
-		if "bat" not in state and "bug" not in state and "hazard" not in state and "enemy" not in state:
-			# if state[-2] == 1 and action[0] == 1:
-			# 	reward += 10
-			# elif state[-2] == -1 and action[0] == -1:
-			# 	reward += 10
-			# elif state[-1] == 1 and action[1] == 1:
-			# 	reward += 10
-			# elif state[-1] == -1 and action[1] == -1:
-			# 	reward += 10
+
+		# check to see if there's an enemy or not
+		enemy_found = False
+		for entity in state:
+			if entity[:5] == "enemy":
+				enemy_found = True
+
+		# go towards stairs if no enemy found
+		if not enemy_found:
 			if self.player.x - self.stairloc[0] > 0:
 				action = (-1,0)
 				# game_state.append(-1)
@@ -193,10 +193,10 @@ class Game(object):
 				action = (0,1)
 			# else:
 				# game_state.append(0)
+			# print('no enemy found')
 			return action
 
-
-
+		# use learned behaviour if enemy found
 		legalActions = self.getLegalActions(state)
 		action = None
 		eps = (random.random() <= EPSILON)
@@ -224,7 +224,7 @@ class Game(object):
 	def get_reward(self, state, action, next_state):
 		# HP going down is bad
 		# time.sleep(0.5)
-		reward = -1
+		reward = 0
 		# print("-----")
 		# print(self.last_hp)
 		# print(self.player.hp)
@@ -234,8 +234,8 @@ class Game(object):
 			# 	reward -= 10000
 		self.last_hp = self.player.hp
 		# Entering stairs is good
-		if (self.player.x, self.player.y) == self.stairloc:
-			reward += 1000
+		# if (self.player.x, self.player.y) == self.stairloc:
+		# 	reward += 1000
 
 		# Going towards stairs is good
 		# print(state[-2:])
@@ -260,7 +260,7 @@ class Game(object):
 		# Killing an enemy is good
 		if self.killed_enemy == True:
 			# print("KILLED ENEMY")
-			reward += 100
+			reward += 500
 		# if reward != -1:
 		# 	print(reward)
 		return reward
@@ -274,21 +274,53 @@ class Game(object):
 				# print(type(obj))
 				# print(type(Wall()))
 				# print(Enemy)
-				if type(obj) == Ebat:
-					thing_in_square = "bat"
-				elif type(obj) == Bug:
-					thing_in_square = "bug"
-				elif type(obj) == GroundHazard or type(obj) == GroundHazard_Fixed:
+				# if type(obj) == Ebat:
+
+				# 	if obj.countdown == 0:
+				# 		thing_in_square = "attack_bat"
+				# 	else:
+				# 		thing_in_square = "bat"
+
+				# elif type(obj) == Bug:
+				# 	if obj.countdown == 0:
+				# 		thing_in_square = "attack_bug"
+				# 	else:
+				# 		thing_in_square = "bug"
+
+				if type(obj) == GroundHazard or type(obj) == GroundHazard_Fixed:
 					thing_in_square = "hazard"
+
 				elif issubclass(type(obj), Enemy):
 					# print("1")
 					thing_in_square = "enemy"
+					# print(obj.hp)
+
+					if type(obj) == Ebat:
+						thing_in_square += "_bat"
+
+					elif type(obj) == Bug:
+						thing_in_square += "_bug"
+
+					elif type(obj) == FlameSpawner:
+						thing_in_square += "_flame"
+
+					if obj.countdown == 0:
+						thing_in_square += "_atk"
+
+					if obj.hp == 1:
+						thing_in_square += "_weak"
+
+					# if obj.countdown == 0:
+					# 	thing_in_square = "attack_enemy"
+					# else:
+					# 	thing_in_square = "enemy"
+
 				elif type(obj) == Wall:
 					# print("2")
 					thing_in_square = "wall"
-				elif type(obj) == Stairs:
-					# print("3")
-					thing_in_square = "stairs"
+				# elif type(obj) == Stairs:
+				# 	# print("3")
+				# 	thing_in_square = "stairs"
 			game_state[ind] = thing_in_square
 		# determine if we moved closer to the stairs
 
@@ -335,8 +367,11 @@ class Game(object):
 			self.killed_enemy = False
 
 	def handle_events_teleop(self, events):
+		game_state = self.get_state()
 		self.editor.update_mouse_events(events)
 		# print(self.get_state())
+		# action = None
+		action = None
 		for event in events:
 			if event.type == pygame.QUIT:
 				pygame.quit()
@@ -345,50 +380,81 @@ class Game(object):
 				if self.black_shade == UP:
 					return
 				if event.key == pygame.K_UP or event.key == pygame.K_w :
-					self.move_player(0, -1)
+					action = (0, -1)
+					# self.move_player(0, -1)
 				elif event.key == pygame.K_DOWN or event.key == pygame.K_s:
-					self.move_player(0, 1)
+					action = (0, 1)
+					# self.move_player(0, 1)
 				elif event.key == pygame.K_LEFT or event.key == pygame.K_a:
-					self.move_player(-1, 0)
+					action = (-1, 0)
+					# self.move_player(-1, 0)
 				elif event.key == pygame.K_RIGHT or event.key == pygame.K_d:
-					self.move_player(1, 0)
+					action = (1, 0)
+					# self.move_player(1, 0)
 				elif event.key == pygame.K_SPACE:
-					self.move_player(0, 0)
+					action = (0, 0)
+					# self.move_player(0, 0)
 					self.player.mana = self.player.mana_max
-				elif event.key == pygame.K_p:
-					self.load_level()
-				elif event.key == pygame.K_e:
-					self.editor.toggle()
-				elif event.key == pygame.K_z:
-					if self.editor.active:
-						if self.player.mana >= 5:
-							self.player.macros[0] = self.editor.get_macro()
-							self.player.mana -= 5
-							self.editor.toggle()
-						else:
-							self.nope.play()
-					elif self.player in self.turn_queue:
-						self.player.macro = self.player.macros[0]
-				elif event.key == pygame.K_x:
-					if self.editor.active:
-						if self.player.mana >= 5:
-							self.player.macros[1] = self.editor.get_macro()
-							self.player.mana -= 5
-							self.editor.toggle()
-						else:
-							self.nope.play()
-					elif self.player in self.turn_queue:
-						self.player.macro = self.player.macros[1]
-				elif event.key == pygame.K_c:
-					if self.editor.active:
-						if self.player.mana >= 5:
-							self.player.macros[2] = self.editor.get_macro()
-							self.player.mana -= 5
-							self.editor.toggle()
-						else:
-							self.nope.play()
-					elif self.player in self.turn_queue:
-						self.player.macro = self.player.macros[2]
+
+		# print(action)
+		key_pressed = False
+		for event in events:
+			try:
+				if event.key in [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT, pygame.K_SPACE]:
+					key_pressed = True
+			except AttributeError:
+				pass
+
+		if key_pressed == False:
+			return None
+				# elif event.key == pygame.K_p:
+				# 	self.load_level()
+				# elif event.key == pygame.K_e:
+				# 	self.editor.toggle()
+				# elif event.key == pygame.K_z:
+				# 	if self.editor.active:
+				# 		if self.player.mana >= 5:
+				# 			self.player.macros[0] = self.editor.get_macro()
+				# 			self.player.mana -= 5
+				# 			self.editor.toggle()
+				# 		else:
+				# 			self.nope.play()
+				# 	elif self.player in self.turn_queue:
+				# 		self.player.macro = self.player.macros[0]
+				# elif event.key == pygame.K_x:
+				# 	if self.editor.active:
+				# 		if self.player.mana >= 5:
+				# 			self.player.macros[1] = self.editor.get_macro()
+				# 			self.player.mana -= 5
+				# 			self.editor.toggle()
+				# 		else:
+				# 			self.nope.play()
+				# 	elif self.player in self.turn_queue:
+				# 		self.player.macro = self.player.macros[1]
+				# elif event.key == pygame.K_c:
+				# 	if self.editor.active:
+				# 		if self.player.mana >= 5:
+				# 			self.player.macros[2] = self.editor.get_macro()
+				# 			self.player.mana -= 5
+				# 			self.editor.toggle()
+				# 		else:
+				# 			self.nope.play()
+				# 	elif self.player in self.turn_queue:
+				# 		self.player.macro = self.player.macros[2]
+		if action != None:
+			if self.player.hp > 0 and not (self.player.x, self.player.y) == self.stairloc:
+				# self.last_hp = self.player.hp
+				# print(action)
+				self.lastloc = (self.player.x, self.player.y)
+
+				self.move_player(action[0], action[1])
+				game_state2 = self.get_state()
+				reward = 0
+				reward = self.get_reward(game_state, action, game_state2)
+				print(reward)
+				self.ep_reward += reward
+				self.updateQ(game_state, action, game_state2, reward)
+				self.killed_enemy = False
 
 
 	def main(self):
@@ -417,7 +483,6 @@ class Game(object):
 
 		if args.teleop:
 			self.teleop = True
-
 
 		self.episode = 0
 		self.ep_last_hp = None
@@ -596,7 +661,7 @@ class Game(object):
 		self.stairs_sound.play()
 
 	def load_level(self, game_over=False, seed=18):
-		# random.seed(seed)
+		random.seed(seed)
 		if game_over:
 			self.level = 1
 			self.editor = Editor(self)
