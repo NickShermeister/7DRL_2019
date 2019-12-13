@@ -22,10 +22,10 @@ import pickle
 import datetime
 import argparse
 
-EPSILON = 0.0
+EPSILON = 0.4
 ALPHA = 0.1
 DISCOUNT = 0.95
-EXPLORE = 10000
+EXPLORE = 3000
 EP_DIFF = EPSILON/EXPLORE
 
 class Game(object):
@@ -48,17 +48,34 @@ class Game(object):
 		self.player_move_sound = pygame.mixer.Sound("audio/player_move.wav")
 		self.nope = pygame.mixer.Sound("audio/nope.wav")
 		self.close_editor = pygame.mixer.Sound("audio/close_editor.wav")
-		self.mus.set_volume(0.5)
-		self.mus.play(-1)
+		# all_volumes = [0.5,-1,0.7,0.1,0.6,0.4,0.8,0.4,0.3]
+		all_volumes = [0,0,0,0,0,0,0,0,0,0]
+		self.mus.set_volume(all_volumes[0])
+		self.mus.play(all_volumes[1])
 
-		self.swish_noise.set_volume(0.7)
-		self.nope.set_volume(0.1)
-		self.close_editor.set_volume(0.1)
-		self.ram_noise.set_volume(0.6)
-		self.byte_noise.set_volume(0.4)
-		self.bat_noise.set_volume(0.8)
-		self.hit_noise.set_volume(0.4)
-		self.tile_pickup.set_volume(0.3)
+		self.swish_noise.set_volume(all_volumes[2])
+		self.nope.set_volume(all_volumes[3])
+		self.close_editor.set_volume(all_volumes[4])
+		self.ram_noise.set_volume(all_volumes[5])
+		self.byte_noise.set_volume(all_volumes[6])
+		self.bat_noise.set_volume(all_volumes[7])
+		self.hit_noise.set_volume(all_volumes[8])
+		self.tile_pickup.set_volume(all_volumes[9])
+		self.stairs_sound.set_volume(0)
+		"""
+				self.mus.set_volume(0.5)
+				self.mus.play(-1)
+
+				self.swish_noise.set_volume(0.7)
+				self.nope.set_volume(0.1)
+				self.close_editor.set_volume(0.1)
+				self.ram_noise.set_volume(0.6)
+				self.byte_noise.set_volume(0.4)
+				self.bat_noise.set_volume(0.8)
+				self.hit_noise.set_volume(0.4)
+				self.tile_pickup.set_volume(0.3)
+				self.player_move_sound.set_volume(0.00)
+		"""
 		self.player_move_sound.set_volume(0.00)
 		self.screen_blit = pygame.display.set_mode(BLIT_SIZE)
 		self.screen = pygame.Surface(WINDOW_SIZE)
@@ -241,7 +258,6 @@ class Game(object):
 			reward += 1000
 			self.turn_count -= 500
 
-
 		# Going towards stairs is good
 		# print(state[-2:])
 		if state[-2] == 1 and action[0] == 1:
@@ -278,8 +294,8 @@ class Game(object):
 
 	def get_state(self):
 		adj_squares = directions
-		game_state = ["tile"] * len(all_squares)
-		for ind, square in enumerate(all_squares):
+		game_state = ["tile"] * len(all_squares2)
+		for ind, square in enumerate(all_squares2):
 			thing_in_square = "empty"
 			for obj in self.map.get((self.player.x + square[0], self.player.y + square[1])):
 
@@ -348,6 +364,8 @@ class Game(object):
 				self.end_level()
 				self.turn_count = 0
 				self.episode += 1
+				self.levels.append(self.level)
+				print(f'episode: {self.episode}')
 				if self.episode < EXPLORE:
 					self.epsilon -= EP_DIFF
 
@@ -428,6 +446,7 @@ class Game(object):
 				self.turn_count = 0
 				self.episode += 1
 				self.rewards.append(self.ep_reward)
+				self.levels.append(self.level)
 				self.ep_reward = 0
 				if self.episode < EXPLORE:
 					self.epsilon -= EP_DIFF
@@ -471,6 +490,7 @@ class Game(object):
 
 		self.ep_reward = 0
 		self.rewards = []
+		self.levels = []
 
 		while True:
 			# print(self.values)
@@ -527,6 +547,7 @@ class Game(object):
 				self.turn_count = 0
 				self.rewards.append(self.ep_reward)
 				self.ep_reward = 0
+				self.levels.append(self.level)
 				print(self.rewards)
 
 			self.ep_last_hp = self.player.hp

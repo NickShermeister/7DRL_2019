@@ -132,6 +132,7 @@ class Bug(Enemy):
         readied = SpriteSheet("images/bug_readied.png", (2, 1), 2)
         self.sprite.add_animation({"Readied": readied})
         self.death_noise = self.game.bug_noise
+        self.death_noise.set_volume(0)
 
     def move(self):
         Enemy.move(self)
@@ -150,6 +151,8 @@ class Ebat(Enemy):
         self.sprite.add_animation({"Idle": idle, "Readied": readied})
         self.sprite.start_animation("Idle")
         self.death_noise = self.game.bat_noise
+        self.death_noise.set_volume(0)
+
 
     def move(self):
         Enemy.move(self)
@@ -169,6 +172,7 @@ class Bit(Enemy):
         self.sprite.add_animation({"Idle": idle, "Charging": charging})
         self.sprite.start_animation("Idle")
         self.charging = False
+        self.death_noise.set_volume(0)
 
     def draw(self, surf):
         self.sprite.y_pos -= 5
@@ -185,6 +189,8 @@ class FlameSpawner(Enemy): #Needs art, flame dude
         self.death_noise = self.game.firewall_noise
         self.sprite.add_animation({"Idle": idle})
         self.sprite.start_animation("Idle")
+        self.death_noise.set_volume(0)
+
 
     def spawn(self, x, y):
         GroundHazard(self.game, x, y)
@@ -204,6 +210,7 @@ class GroundHazard(Enemy): #Needs art, flame
         self.layer = WALL_LAYER
         self.avoid = True
         self.height = 2
+
 
         self.hp_visible = False
 
@@ -228,6 +235,7 @@ class GroundHazard_Fixed(Enemy): #Needs art, spikes
         self.hittable = False
         self.layer = WALL_LAYER
         self.avoid = True
+		
 
 class Bomb(Enemy): #Needs art, bomb
 

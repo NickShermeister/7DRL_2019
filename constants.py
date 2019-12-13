@@ -34,8 +34,17 @@ corners = [ (-1, -1), (1, 1), (-1, 1), (1, -1) ]
 far_squares = [(0,2), (2,0), (0, -2), (-2,0)]
 neighbors = directions + corners + [(0,0)]
 all_squares = directions + corners + far_squares
-
-
+far_squares2 = [(-3,0), (-2,1), (-1,2), (0,3), (1,2), (2,1), (3,0), (2,-1), (1,-2), (0,-3), (-1,-2), (-2,-1)]
+all_squares2 = all_squares + far_squares2
+"""
+			03
+		-12	02	12
+	-21	-11	01	11	21
+-30	-20	-10	00	10	20	30
+	-2-1-1-10-1	1-1	2-1
+		-1-20-2	1-2
+			0-3
+"""
 KEYDICT = {pygame.K_a: "a",
            pygame.K_b: "b",
            pygame.K_c: "c",

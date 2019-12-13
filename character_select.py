@@ -17,8 +17,10 @@ class CharacterSelect(object):
 		self.nick_sprite = Sprite(4)
 
 		self.blip_sound = pygame.mixer.Sound("audio/blip.wav")
-		self.blip_sound.set_volume(0.16)
+		self.blip_sound.set_volume(0.0)
+		# self.blip_sound.set_volume(0.16)
 		self.select_sound = pygame.mixer.Sound("audio/character_select.wav")
+		self.select_sound.set_volume(0)
 
 		will = SpriteSheet("images/will.png", (2, 1), 2)
 		vicky = SpriteSheet("images/vicky.png", (2, 1), 2)
